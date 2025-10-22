@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <Compile Include="Render.Tests.fs" />
+        <Compile Include="Tags.Tests.fs" />
         <Compile Include="Tools.Tests.fs" />
     </ItemGroup>
 
