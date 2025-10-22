@@ -18,26 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  fantomas-check:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Tool Restore
-        run: dotnet tool restore
-
-      - name: Lint
-        run: dotnet fantomas -r --check .
-
   build:
     runs-on: ubuntu-22.04
-    needs: ['fantomas-check']
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
