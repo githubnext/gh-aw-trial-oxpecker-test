@@ -4,6 +4,7 @@ open System.IO
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Features
+open Microsoft.Extensions.DependencyInjection
 open Oxpecker
 open Xunit
 open FsUnit.Light
@@ -178,4 +179,62 @@ let ``Compose two middlewares, only first executed`` () =
         do! (middlware1 >=> middlware2 >=> handler) ctx
 
         x |> shouldEqual 1
+    }
+
+[<Fact>]
+let ``Operator >>=> composes handler with function taking one argument`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        let mutable result = ""
+        let handler1: EndpointHandler = fun _ -> task { result <- result + "A" }
+        let handlerFunc (x: string) : EndpointHandler = fun _ -> task { result <- result + x }
+
+        do! (handler1 >>=> handlerFunc) "B" ctx
+
+        result |> shouldEqual "AB"
+    }
+
+[<Fact>]
+let ``Operator >>=>+ composes handler with function taking two arguments`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        let mutable result = ""
+        let handler1: EndpointHandler = fun _ -> task { result <- result + "A" }
+        let handlerFunc (x: string) (y: string) : EndpointHandler =
+            fun _ -> task { result <- result + x + y }
+
+        do! (handler1 >>=>+ handlerFunc) "B" "C" ctx
+
+        result |> shouldEqual "ABC"
+    }
+
+[<Fact>]
+let ``Operator >>=>++ composes handler with function taking three arguments`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        let mutable result = ""
+        let handler1: EndpointHandler = fun _ -> task { result <- result + "A" }
+        let handlerFunc (x: string) (y: string) (z: string) : EndpointHandler =
+            fun _ -> task { result <- result + x + y + z }
+
+        do! (handler1 >>=>++ handlerFunc) "B" "C" "D" ctx
+
+        result |> shouldEqual "ABCD"
+    }
+
+[<Fact>]
+let ``Operator ~% converts IResult to EndpointHandler`` () =
+    task {
+        let services = ServiceCollection()
+        services.AddLogging() |> ignore
+        let serviceProvider = services.BuildServiceProvider()
+        let ctx = DefaultHttpContext()
+        ctx.RequestServices <- serviceProvider
+        ctx.Response.Body <- new MemoryStream()
+        let result = Results.Text("test response")
+        let handler = (~%) result
+
+        do! handler ctx
+
+        ctx.Response.StatusCode |> shouldEqual 200
     }
