@@ -18,6 +18,7 @@
         <Compile Include="Json.Tests.fs" />
         <Compile Include="ModelParser.Tests.fs" />
         <Compile Include="HttpContextExtensions.Tests.fs" />
+        <Compile Include="Handlers.Tests.fs" />
         <Compile Include="Core.Tests.fs" />
         <Compile Include="ResponseCaching.Tests.fs" />
         <Compile Include="Preconditional.Tests.fs" />
