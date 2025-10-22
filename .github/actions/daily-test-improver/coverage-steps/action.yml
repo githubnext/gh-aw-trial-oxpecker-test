@@ -3,25 +3,27 @@ description: 'Build, test, and generate code coverage reports for Oxpecker proje
 runs:
   using: "composite"
   steps:
-    # Step 1: Add coverlet.collector to test projects if not already present
-    - name: Add coverlet.collector to test projects
+    # Step 1: Add required test packages to test projects if not already present
+    - name: Add test packages to test projects
       shell: bash
       run: |
-        echo "=== Adding coverlet.collector to test projects ===" | tee -a coverage-steps.log
+        echo "=== Adding required test packages to test projects ===" | tee -a coverage-steps.log
 
-        # Add to Oxpecker.Tests
+        # Add coverlet.collector and xunit.runner.visualstudio to Oxpecker.Tests
         if ! grep -q "coverlet.collector" tests/Oxpecker.Tests/Oxpecker.Tests.fsproj; then
-          echo "Adding coverlet.collector to Oxpecker.Tests" | tee -a coverage-steps.log
-          sed -i '/<\/ItemGroup>/i \    <PackageReference Include="coverlet.collector" Version="6.0.2">\n      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>\n      <PrivateAssets>all</PrivateAssets>\n    </PackageReference>' tests/Oxpecker.Tests/Oxpecker.Tests.fsproj
+          echo "Adding packages to Oxpecker.Tests" | tee -a coverage-steps.log
+          dotnet add tests/Oxpecker.Tests/Oxpecker.Tests.fsproj package coverlet.collector --version 6.0.2 2>&1 | tee -a coverage-steps.log
+          dotnet add tests/Oxpecker.Tests/Oxpecker.Tests.fsproj package xunit.runner.visualstudio --version 3.0.0 2>&1 | tee -a coverage-steps.log
         fi
 
-        # Add to Oxpecker.ViewEngine.Tests
+        # Add coverlet.collector and xunit.runner.visualstudio to Oxpecker.ViewEngine.Tests
         if ! grep -q "coverlet.collector" tests/Oxpecker.ViewEngine.Tests/Oxpecker.ViewEngine.Tests.fsproj; then
-          echo "Adding coverlet.collector to Oxpecker.ViewEngine.Tests" | tee -a coverage-steps.log
-          sed -i '/<\/ItemGroup>/i \    <PackageReference Include="coverlet.collector" Version="6.0.2">\n      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>\n      <PrivateAssets>all</PrivateAssets>\n    </PackageReference>' tests/Oxpecker.ViewEngine.Tests/Oxpecker.ViewEngine.Tests.fsproj
+          echo "Adding packages to Oxpecker.ViewEngine.Tests" | tee -a coverage-steps.log
+          dotnet add tests/Oxpecker.ViewEngine.Tests/Oxpecker.ViewEngine.Tests.fsproj package coverlet.collector --version 6.0.2 2>&1 | tee -a coverage-steps.log
+          dotnet add tests/Oxpecker.ViewEngine.Tests/Oxpecker.ViewEngine.Tests.fsproj package xunit.runner.visualstudio --version 3.0.0 2>&1 | tee -a coverage-steps.log
         fi
 
-        echo "Coverlet.collector setup complete" | tee -a coverage-steps.log
+        echo "Test packages setup complete" | tee -a coverage-steps.log
 
     # Step 2: Restore dependencies
     - name: Restore dependencies
