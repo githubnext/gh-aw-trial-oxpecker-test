@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Builder.Tests.fs" />
         <Compile Include="Render.Tests.fs" />
         <Compile Include="Aria.Tests.fs" />
         <Compile Include="Tags.Tests.fs" />
