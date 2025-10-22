@@ -1,0 +1,117 @@
+name: 'Coverage Steps'
+description: 'Build, test, and generate code coverage reports for Oxpecker projects'
+runs:
+  using: "composite"
+  steps:
+    # Step 1: Add required test packages to test projects if not already present
+    - name: Add test packages to test projects
+      shell: bash
+      run: |
+        echo "=== Adding required test packages to test projects ===" | tee -a coverage-steps.log
+
+        # Add coverlet.collector and xunit.runner.visualstudio to Oxpecker.Tests
+        if ! grep -q "coverlet.collector" tests/Oxpecker.Tests/Oxpecker.Tests.fsproj; then
+          echo "Adding packages to Oxpecker.Tests" | tee -a coverage-steps.log
+          dotnet add tests/Oxpecker.Tests/Oxpecker.Tests.fsproj package coverlet.collector --version 6.0.2 2>&1 | tee -a coverage-steps.log
+          dotnet add tests/Oxpecker.Tests/Oxpecker.Tests.fsproj package xunit.runner.visualstudio --version 3.0.0 2>&1 | tee -a coverage-steps.log
+        fi
+
+        # Add coverlet.collector and xunit.runner.visualstudio to Oxpecker.ViewEngine.Tests
+        if ! grep -q "coverlet.collector" tests/Oxpecker.ViewEngine.Tests/Oxpecker.ViewEngine.Tests.fsproj; then
+          echo "Adding packages to Oxpecker.ViewEngine.Tests" | tee -a coverage-steps.log
+          dotnet add tests/Oxpecker.ViewEngine.Tests/Oxpecker.ViewEngine.Tests.fsproj package coverlet.collector --version 6.0.2 2>&1 | tee -a coverage-steps.log
+          dotnet add tests/Oxpecker.ViewEngine.Tests/Oxpecker.ViewEngine.Tests.fsproj package xunit.runner.visualstudio --version 3.0.0 2>&1 | tee -a coverage-steps.log
+        fi
+
+        echo "Test packages setup complete" | tee -a coverage-steps.log
+
+    # Step 2: Restore dependencies
+    - name: Restore dependencies
+      shell: bash
+      run: |
+        echo "=== Restoring dependencies ===" | tee -a coverage-steps.log
+        dotnet restore Oxpecker.sln 2>&1 | tee -a coverage-steps.log
+
+    # Step 3: Build the solution
+    - name: Build solution
+      shell: bash
+      run: |
+        echo "=== Building solution ===" | tee -a coverage-steps.log
+        dotnet build Oxpecker.sln --no-restore 2>&1 | tee -a coverage-steps.log
+
+    # Step 4: Run tests with coverage collection
+    - name: Run tests with coverage
+      shell: bash
+      run: |
+        echo "=== Running tests with coverage collection ===" | tee -a coverage-steps.log
+
+        # Create coverage results directory
+        mkdir -p coverage-results
+
+        # Run tests with coverage collection for main solution
+        dotnet test Oxpecker.sln \
+          --no-restore \
+          --no-build \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./coverage-results \
+          --logger "console;verbosity=detailed" 2>&1 | tee -a coverage-steps.log
+
+        echo "Tests completed" | tee -a coverage-steps.log
+
+        # List coverage files generated
+        echo "Coverage files generated:" | tee -a coverage-steps.log
+        find coverage-results -name "coverage.cobertura.xml" -type f | tee -a coverage-steps.log
+
+    # Step 5: Install ReportGenerator tool
+    - name: Install ReportGenerator
+      shell: bash
+      run: |
+        echo "=== Installing ReportGenerator ===" | tee -a coverage-steps.log
+        dotnet tool install -g dotnet-reportgenerator-globaltool 2>&1 | tee -a coverage-steps.log || echo "ReportGenerator already installed" | tee -a coverage-steps.log
+
+    # Step 6: Generate combined coverage report
+    - name: Generate coverage report
+      shell: bash
+      run: |
+        echo "=== Generating combined coverage report ===" | tee -a coverage-steps.log
+
+        # Generate HTML report
+        reportgenerator \
+          -reports:"./coverage-results/**/coverage.cobertura.xml" \
+          -targetdir:"./coverage-report" \
+          -reporttypes:"Html;Cobertura" 2>&1 | tee -a coverage-steps.log
+
+        echo "Coverage report generated in ./coverage-report" | tee -a coverage-steps.log
+
+        # Display summary
+        if [ -f "./coverage-report/index.html" ]; then
+          echo "HTML report available at: ./coverage-report/index.html" | tee -a coverage-steps.log
+        fi
+
+        # Parse and display coverage summary from Cobertura XML
+        if [ -f "./coverage-report/Cobertura.xml" ]; then
+          echo "" | tee -a coverage-steps.log
+          echo "=== COVERAGE SUMMARY ===" | tee -a coverage-steps.log
+          python3 -c "
+import xml.etree.ElementTree as ET
+try:
+    tree = ET.parse('./coverage-report/Cobertura.xml')
+    root = tree.getroot()
+    line_rate = float(root.attrib.get('line-rate', 0)) * 100
+    branch_rate = float(root.attrib.get('branch-rate', 0)) * 100
+    print(f'Line Coverage: {line_rate:.2f}%')
+    print(f'Branch Coverage: {branch_rate:.2f}%')
+except Exception as e:
+    print(f'Could not parse coverage summary: {e}')
+" 2>&1 | tee -a coverage-steps.log
+        fi
+
+    # Step 7: Upload coverage report as artifact
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage
+        path: |
+          coverage-report/
+          coverage-results/**/coverage.cobertura.xml
+        retention-days: 30
