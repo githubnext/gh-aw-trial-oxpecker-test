@@ -1026,3 +1026,488 @@ let ``anchor with referrerpolicy attribute test`` () =
     a(href = "https://example.com", referrerpolicy = "no-referrer") { "External" }
     |> Render.toString
     |> shouldEqual """<a href="https://example.com" referrerpolicy="no-referrer">External</a>"""
+
+// Tests for output element
+[<Fact>]
+let ``output element with for attribute test`` () =
+    output(for' = "input1 input2", name = "result") { "100" }
+    |> Render.toString
+    |> shouldEqual """<output for="input1 input2" name="result">100</output>"""
+
+[<Fact>]
+let ``output element with form attribute test`` () =
+    output(form = "myform", name = "total") { "150" }
+    |> Render.toString
+    |> shouldEqual """<output form="myform" name="total">150</output>"""
+
+// Tests for textarea element attributes
+[<Fact>]
+let ``textarea element with basic attributes test`` () =
+    textarea(name = "message", rows = 5, cols = 40) { "Enter text here" }
+    |> Render.toString
+    |> shouldEqual """<textarea name="message" rows="5" cols="40">Enter text here</textarea>"""
+
+[<Fact>]
+let ``textarea with placeholder test`` () =
+    textarea(name = "comment", placeholder = "Enter your comment")
+    |> Render.toString
+    |> shouldEqual """<textarea name="comment" placeholder="Enter your comment"></textarea>"""
+
+[<Fact>]
+let ``textarea with required attribute test`` () =
+    textarea(name = "feedback", required = true)
+    |> Render.toString
+    |> shouldEqual """<textarea name="feedback" required></textarea>"""
+
+[<Fact>]
+let ``textarea with readonly attribute test`` () =
+    textarea(name = "terms", readonly = true) { "Terms and conditions..." }
+    |> Render.toString
+    |> shouldEqual """<textarea name="terms" readonly>Terms and conditions...</textarea>"""
+
+[<Fact>]
+let ``textarea with disabled attribute test`` () =
+    textarea(name = "notes", disabled = true)
+    |> Render.toString
+    |> shouldEqual """<textarea name="notes" disabled></textarea>"""
+
+[<Fact>]
+let ``textarea with autofocus attribute test`` () =
+    textarea(name = "content", autofocus = true)
+    |> Render.toString
+    |> shouldEqual """<textarea name="content" autofocus></textarea>"""
+
+[<Fact>]
+let ``textarea with maxlength and minlength test`` () =
+    textarea(name = "bio", maxlength = 500, minlength = 10)
+    |> Render.toString
+    |> shouldEqual """<textarea name="bio" maxlength="500" minlength="10"></textarea>"""
+
+[<Fact>]
+let ``textarea with wrap attribute test`` () =
+    textarea(name = "code", wrap = "soft")
+    |> Render.toString
+    |> shouldEqual """<textarea name="code" wrap="soft"></textarea>"""
+
+[<Fact>]
+let ``textarea with autocomplete attribute test`` () =
+    textarea(name = "address", autocomplete = "street-address")
+    |> Render.toString
+    |> shouldEqual """<textarea name="address" autocomplete="street-address"></textarea>"""
+
+[<Fact>]
+let ``textarea with dirname attribute test`` () =
+    textarea(name = "comment", dirname = "comment.dir")
+    |> Render.toString
+    |> shouldEqual """<textarea name="comment" dirname="comment.dir"></textarea>"""
+
+[<Fact>]
+let ``textarea with form attribute test`` () =
+    textarea(name = "notes", form = "mainform")
+    |> Render.toString
+    |> shouldEqual """<textarea name="notes" form="mainform"></textarea>"""
+
+// Tests for button element attributes
+[<Fact>]
+let ``button with name and value attributes test`` () =
+    button(type' = "submit", name = "action", value = "save") { "Save" }
+    |> Render.toString
+    |> shouldEqual """<button type="submit" name="action" value="save">Save</button>"""
+
+[<Fact>]
+let ``button with form attribute test`` () =
+    button(type' = "submit", form = "myform") { "Submit" }
+    |> Render.toString
+    |> shouldEqual """<button type="submit" form="myform">Submit</button>"""
+
+[<Fact>]
+let ``button with formaction attribute test`` () =
+    button(type' = "submit", formaction = "/alt-submit") { "Submit to Alt" }
+    |> Render.toString
+    |> shouldEqual """<button type="submit" formaction="/alt-submit">Submit to Alt</button>"""
+
+[<Fact>]
+let ``button with formenctype attribute test`` () =
+    button(type' = "submit", formenctype = "multipart/form-data") { "Upload" }
+    |> Render.toString
+    |> shouldEqual """<button type="submit" formenctype="multipart/form-data">Upload</button>"""
+
+[<Fact>]
+let ``button with formmethod attribute test`` () =
+    button(type' = "submit", formmethod = "post") { "Post" }
+    |> Render.toString
+    |> shouldEqual """<button type="submit" formmethod="post">Post</button>"""
+
+[<Fact>]
+let ``button with formnovalidate attribute test`` () =
+    button(type' = "submit", formnovalidate = true) { "Skip Validation" }
+    |> Render.toString
+    |> shouldEqual """<button type="submit" formnovalidate>Skip Validation</button>"""
+
+[<Fact>]
+let ``button with formtarget attribute test`` () =
+    button(type' = "submit", formtarget = "_blank") { "Open in New Tab" }
+    |> Render.toString
+    |> shouldEqual """<button type="submit" formtarget="_blank">Open in New Tab</button>"""
+
+[<Fact>]
+let ``button with popovertarget attribute test`` () =
+    button(popovertarget = "my-popover") { "Show Popover" }
+    |> Render.toString
+    |> shouldEqual """<button popovertarget="my-popover">Show Popover</button>"""
+
+[<Fact>]
+let ``button with popovertargetaction attribute test`` () =
+    button(popovertarget = "my-popover", popovertargetaction = "toggle") { "Toggle" }
+    |> Render.toString
+    |> shouldEqual """<button popovertarget="my-popover" popovertargetaction="toggle">Toggle</button>"""
+
+// Tests for select element attributes
+[<Fact>]
+let ``select with required attribute test`` () =
+    select(name = "country", required = true) {
+        option(value = "us") { "United States" }
+        option(value = "uk") { "United Kingdom" }
+    }
+    |> Render.toString
+    |> shouldEqual """<select name="country" required><option value="us">United States</option><option value="uk">United Kingdom</option></select>"""
+
+[<Fact>]
+let ``select with autofocus attribute test`` () =
+    select(name = "priority", autofocus = true) {
+        option(value = "high") { "High" }
+        option(value = "low") { "Low" }
+    }
+    |> Render.toString
+    |> shouldEqual """<select name="priority" autofocus><option value="high">High</option><option value="low">Low</option></select>"""
+
+[<Fact>]
+let ``select with autocomplete attribute test`` () =
+    select(name = "country", autocomplete = "country") {
+        option(value = "us") { "United States" }
+    }
+    |> Render.toString
+    |> shouldEqual """<select name="country" autocomplete="country"><option value="us">United States</option></select>"""
+
+[<Fact>]
+let ``select with disabled attribute test`` () =
+    select(name = "status", disabled = true) {
+        option(value = "active") { "Active" }
+    }
+    |> Render.toString
+    |> shouldEqual """<select name="status" disabled><option value="active">Active</option></select>"""
+
+[<Fact>]
+let ``select with multiple attribute test`` () =
+    select(name = "tags", multiple = true) {
+        option(value = "tag1") { "Tag 1" }
+        option(value = "tag2") { "Tag 2" }
+    }
+    |> Render.toString
+    |> shouldEqual """<select name="tags" multiple><option value="tag1">Tag 1</option><option value="tag2">Tag 2</option></select>"""
+
+[<Fact>]
+let ``select with size attribute test`` () =
+    select(name = "items", size = 5) {
+        option(value = "1") { "Item 1" }
+        option(value = "2") { "Item 2" }
+    }
+    |> Render.toString
+    |> shouldEqual """<select name="items" size="5"><option value="1">Item 1</option><option value="2">Item 2</option></select>"""
+
+[<Fact>]
+let ``select with form attribute test`` () =
+    select(name = "category", form = "mainform") {
+        option(value = "a") { "Category A" }
+    }
+    |> Render.toString
+    |> shouldEqual """<select name="category" form="mainform"><option value="a">Category A</option></select>"""
+
+// Tests for option element attributes
+[<Fact>]
+let ``option with selected attribute test`` () =
+    select(name = "choice") {
+        option(value = "a") { "Option A" }
+        option(value = "b", selected = true) { "Option B" }
+        option(value = "c") { "Option C" }
+    }
+    |> Render.toString
+    |> shouldEqual """<select name="choice"><option value="a">Option A</option><option value="b" selected>Option B</option><option value="c">Option C</option></select>"""
+
+[<Fact>]
+let ``option with disabled attribute test`` () =
+    select(name = "choice") {
+        option(value = "a") { "Option A" }
+        option(value = "b", disabled = true) { "Option B (unavailable)" }
+    }
+    |> Render.toString
+    |> shouldEqual """<select name="choice"><option value="a">Option A</option><option value="b" disabled>Option B (unavailable)</option></select>"""
+
+[<Fact>]
+let ``option with label attribute test`` () =
+    select(name = "fruit") {
+        option(value = "apple", label = "Apple (Fresh)") { "Apple" }
+    }
+    |> Render.toString
+    |> shouldEqual """<select name="fruit"><option value="apple" label="Apple (Fresh)">Apple</option></select>"""
+
+// Tests for optgroup element
+[<Fact>]
+let ``optgroup with label attribute test`` () =
+    select(name = "cars") {
+        optgroup(label = "Swedish Cars") {
+            option(value = "volvo") { "Volvo" }
+            option(value = "saab") { "Saab" }
+        }
+        optgroup(label = "German Cars") {
+            option(value = "mercedes") { "Mercedes" }
+            option(value = "audi") { "Audi" }
+        }
+    }
+    |> Render.toString
+    |> shouldEqual """<select name="cars"><optgroup label="Swedish Cars"><option value="volvo">Volvo</option><option value="saab">Saab</option></optgroup><optgroup label="German Cars"><option value="mercedes">Mercedes</option><option value="audi">Audi</option></optgroup></select>"""
+
+[<Fact>]
+let ``optgroup with disabled attribute test`` () =
+    select(name = "products") {
+        optgroup(label = "Available", disabled = false) {
+            option(value = "p1") { "Product 1" }
+        }
+        optgroup(label = "Out of Stock", disabled = true) {
+            option(value = "p2") { "Product 2" }
+        }
+    }
+    |> Render.toString
+    |> shouldEqual """<select name="products"><optgroup label="Available"><option value="p1">Product 1</option></optgroup><optgroup label="Out of Stock" disabled><option value="p2">Product 2</option></optgroup></select>"""
+
+// Tests for label element
+[<Fact>]
+let ``label with for attribute test`` () =
+    label(for' = "username-input") { "Username:" }
+    |> Render.toString
+    |> shouldEqual """<label for="username-input">Username:</label>"""
+
+// Tests for style element
+[<Fact>]
+let ``style element with type attribute test`` () =
+    style(type' = "text/css") { "body { margin: 0; }" }
+    |> Render.toString
+    |> shouldEqual """<style type="text/css">body { margin: 0; }</style>"""
+
+[<Fact>]
+let ``style element with media attribute test`` () =
+    style(media = "print") { "@page { size: A4; }" }
+    |> Render.toString
+    |> shouldEqual """<style media="print">@page { size: A4; }</style>"""
+
+// Tests for additional input attributes
+[<Fact>]
+let ``input with src width height alt attributes for image input test`` () =
+    input(type' = "image", src = "/submit-button.png", width = 100, height = 50, alt = "Submit")
+    |> Render.toString
+    |> shouldEqual """<input type="image" src="/submit-button.png" width="100" height="50" alt="Submit">"""
+
+// Tests for additional form element attributes
+[<Fact>]
+let ``form elements collection test`` () =
+    form(action = "/submit", method = "post") {
+        fieldset() {
+            legend() { "Personal Info" }
+            label(for' = "name") { "Name:" }
+            input(type' = "text", name = "name", id = "name")
+            label(for' = "email") { "Email:" }
+            input(type' = "email", name = "email", id = "email")
+        }
+        button(type' = "submit") { "Submit" }
+    }
+    |> Render.toString
+    |> shouldEqual """<form action="/submit" method="post"><fieldset><legend>Personal Info</legend><label for="name">Name:</label><input type="text" name="name" id="name"><label for="email">Email:</label><input type="email" name="email" id="email"></fieldset><button type="submit">Submit</button></form>"""
+
+// Tests for global attribute inputmode on HtmlTag
+[<Fact>]
+let ``inputmode global attribute test`` () =
+    div(inputmode = "numeric") { input(type' = "text") }
+    |> Render.toString
+    |> shouldEqual """<div inputmode="numeric"><input type="text"></div>"""
+
+// Tests for additional media elements
+[<Fact>]
+let ``video with additional attributes test`` () =
+    video(src = "video.mp4", poster = "poster.jpg", autoplay = true, loop = true, muted = true, preload = "metadata")
+    |> Render.toString
+    |> shouldEqual """<video src="video.mp4" poster="poster.jpg" autoplay loop muted preload="metadata"></video>"""
+
+[<Fact>]
+let ``video with playsinline attribute test`` () =
+    video(src = "mobile.mp4", playsinline = true)
+    |> Render.toString
+    |> shouldEqual """<video src="mobile.mp4" playsinline></video>"""
+
+[<Fact>]
+let ``video with disableremoteplayback attribute test`` () =
+    video(src = "secure.mp4", disableremoteplayback = true)
+    |> Render.toString
+    |> shouldEqual """<video src="secure.mp4" disableremoteplayback></video>"""
+
+[<Fact>]
+let ``video with disablepictureinpicture attribute test`` () =
+    video(src = "video.mp4", disablepictureinpicture = true)
+    |> Render.toString
+    |> shouldEqual """<video src="video.mp4" disablepictureinpicture></video>"""
+
+[<Fact>]
+let ``audio with additional attributes test`` () =
+    audio(src = "audio.mp3", autoplay = true, loop = true, muted = true, preload = "auto")
+    |> Render.toString
+    |> shouldEqual """<audio src="audio.mp3" autoplay loop muted preload="auto"></audio>"""
+
+[<Fact>]
+let ``audio with disableremoteplayback attribute test`` () =
+    audio(src = "secure.mp3", disableremoteplayback = true)
+    |> Render.toString
+    |> shouldEqual """<audio src="secure.mp3" disableremoteplayback></audio>"""
+
+// Tests for iframe additional attributes
+[<Fact>]
+let ``iframe with sandbox attribute test`` () =
+    iframe(src = "content.html", sandbox = "allow-scripts")
+    |> Render.toString
+    |> shouldEqual """<iframe src="content.html" sandbox="allow-scripts"></iframe>"""
+
+[<Fact>]
+let ``iframe with loading attribute test`` () =
+    iframe(src = "widget.html", loading = "lazy")
+    |> Render.toString
+    |> shouldEqual """<iframe src="widget.html" loading="lazy"></iframe>"""
+
+[<Fact>]
+let ``iframe with allow attribute test`` () =
+    iframe(src = "video.html", allow = "fullscreen; camera; microphone")
+    |> Render.toString
+    |> shouldEqual """<iframe src="video.html" allow="fullscreen; camera; microphone"></iframe>"""
+
+[<Fact>]
+let ``iframe with srcdoc attribute test`` () =
+    iframe(srcdoc = "<p>Inline HTML content</p>", width = 400, height = 300)
+    |> Render.toString
+    |> shouldEqual """<iframe srcdoc="<p>Inline HTML content</p>" width="400" height="300"></iframe>"""
+
+// Tests for additional table elements
+[<Fact>]
+let ``table with th element attributes test`` () =
+    table() {
+        thead() {
+            tr() {
+                th(abbr = "No", colspan = 1, rowspan = 1, scope = "col") { "Number" }
+                th(headers = "h1 h2") { "Name" }
+            }
+        }
+    }
+    |> Render.toString
+    |> shouldEqual """<table><thead><tr><th abbr="No" colspan="1" rowspan="1" scope="col">Number</th><th headers="h1 h2">Name</th></tr></thead></table>"""
+
+[<Fact>]
+let ``table with td element attributes test`` () =
+    table() {
+        tbody() {
+            tr() {
+                td(colspan = 2, rowspan = 1) { "Merged Cell" }
+                td(headers = "header1") { "Data" }
+            }
+        }
+    }
+    |> Render.toString
+    |> shouldEqual """<table><tbody><tr><td colspan="2" rowspan="1">Merged Cell</td><td headers="header1">Data</td></tr></tbody></table>"""
+
+// Tests for map and area elements
+[<Fact>]
+let ``map with area elements test`` () =
+    map(name = "planetmap") {
+        area(shape = "circle", coords = "90,58,3", href = "sun.html", alt = "Sun")
+        area(shape = "rect", coords = "0,0,110,116", href = "earth.html", alt = "Earth", target = "_blank")
+    }
+    |> Render.toString
+    |> shouldEqual """<map name="planetmap"><area shape="circle" coords="90,58,3" href="sun.html" alt="Sun"><area shape="rect" coords="0,0,110,116" href="earth.html" alt="Earth" target="_blank"></map>"""
+
+[<Fact>]
+let ``area with additional attributes test`` () =
+    area(
+        shape = "poly",
+        coords = "0,0,50,50,0,100",
+        href = "/region",
+        alt = "Region",
+        download = "map.png",
+        rel = "nofollow",
+        referrerpolicy = "no-referrer",
+        ping = "/track"
+    )
+    |> Render.toString
+    |> shouldEqual """<area shape="poly" coords="0,0,50,50,0,100" href="/region" alt="Region" download="map.png" rel="nofollow" referrerpolicy="no-referrer" ping="/track">"""
+
+// Tests for colgroup and col elements
+[<Fact>]
+let ``colgroup and col elements test`` () =
+    table() {
+        colgroup() {
+            col(span = 2)
+            col()
+        }
+        tr() {
+            td() { "A" }
+            td() { "B" }
+            td() { "C" }
+        }
+    }
+    |> Render.toString
+    |> shouldEqual """<table><colgroup><col span="2"><col></colgroup><tr><td>A</td><td>B</td><td>C</td></tr></table>"""
+
+// Tests for meter element with all attributes
+[<Fact>]
+let ``meter with all attributes test`` () =
+    meter(value = "0.6", min = "0", max = "1", low = "0.3", high = "0.7", optimum = "0.5", form = "myform")
+    |> Render.toString
+    |> shouldEqual """<meter value="0.6" min="0" max="1" low="0.3" high="0.7" optimum="0.5" form="myform"></meter>"""
+
+// Tests for object element with additional attributes
+[<Fact>]
+let ``object element with all attributes test`` () =
+    object'(data = "document.pdf", type' = "application/pdf", width = 600, height = 400, name = "doc", form = "myform") {
+        param(name = "autoplay", value = "false")
+        p() { "Fallback text" }
+    }
+    |> Render.toString
+    |> shouldEqual """<object data="document.pdf" type="application/pdf" width="600" height="400" name="doc" form="myform"><param name="autoplay" value="false"><p>Fallback text</p></object>"""
+
+// Tests for fieldset element attributes
+[<Fact>]
+let ``fieldset with disabled and form attributes test`` () =
+    fieldset(disabled = true, form = "mainform", name = "group1") {
+        legend() { "Disabled Group" }
+        input(type' = "text")
+    }
+    |> Render.toString
+    |> shouldEqual """<fieldset disabled form="mainform" name="group1"><legend>Disabled Group</legend><input type="text"></fieldset>"""
+
+// Tests for data element
+[<Fact>]
+let ``data element with value attribute test`` () =
+    data(value = "12345") { "Product ABC" }
+    |> Render.toString
+    |> shouldEqual """<data value="12345">Product ABC</data>"""
+
+// Tests for source element with all attributes
+[<Fact>]
+let ``source element with all attributes test`` () =
+    source(src = "video.mp4", type' = "video/mp4", media = "(min-width: 600px)", sizes = "50vw", srcset = "img-200.jpg 200w")
+    |> Render.toString
+    |> shouldEqual """<source src="video.mp4" type="video/mp4" media="(min-width: 600px)" sizes="50vw" srcset="img-200.jpg 200w">"""
+
+// Tests for details element with open attribute
+[<Fact>]
+let ``details element with open attribute test`` () =
+    details(open' = true) {
+        summary() { "Click to collapse" }
+        p() { "This is expanded by default" }
+    }
+    |> Render.toString
+    |> shouldEqual """<details open><summary>Click to collapse</summary><p>This is expanded by default</p></details>"""
