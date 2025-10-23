@@ -539,3 +539,157 @@ let ``HttpVerb.ToString returns correct string for TRACE`` () =
 [<Fact>]
 let ``HttpVerb.ToString returns correct string for CONNECT`` () =
     HttpVerb.CONNECT.ToString() |> shouldEqual "CONNECT"
+
+// ---------------------------------
+// RouteTemplateBuilder.parse Tests
+// ---------------------------------
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with 's' format parses string`` () =
+    let result = Oxpecker.RouteTemplateBuilder.parse 's' None "test-string"
+    result |> shouldEqual "test-string"
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with 's' format decodes %2F`` () =
+    let result = Oxpecker.RouteTemplateBuilder.parse 's' None "path%2Fwith%2Fslashes"
+    result |> shouldEqual "path/with/slashes"
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with 'i' format parses integer`` () =
+    let result = Oxpecker.RouteTemplateBuilder.parse 'i' None "42"
+    result |> shouldEqual(box 42)
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with 'i' format parses negative integer`` () =
+    let result = Oxpecker.RouteTemplateBuilder.parse 'i' None "-123"
+    result |> shouldEqual(box -123)
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with 'b' format parses boolean true`` () =
+    let result = Oxpecker.RouteTemplateBuilder.parse 'b' None "true"
+    result |> shouldEqual(box true)
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with 'b' format parses boolean false`` () =
+    let result = Oxpecker.RouteTemplateBuilder.parse 'b' None "false"
+    result |> shouldEqual(box false)
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with 'c' format parses char`` () =
+    let result = Oxpecker.RouteTemplateBuilder.parse 'c' None "a"
+    result |> shouldEqual(box 'a')
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with 'd' format parses int64`` () =
+    let result = Oxpecker.RouteTemplateBuilder.parse 'd' None "9223372036854775807"
+    result |> shouldEqual(box 9223372036854775807L)
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with 'f' format parses float`` () =
+    let result = Oxpecker.RouteTemplateBuilder.parse 'f' None "3.14159"
+    result |> shouldEqual(box 3.14159)
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with 'u' format parses uint64`` () =
+    let result = Oxpecker.RouteTemplateBuilder.parse 'u' None "18446744073709551615"
+    result |> shouldEqual(box 18446744073709551615UL)
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with 'O' format and guid modifier parses GUID`` () =
+    let guidString = "550e8400-e29b-41d4-a716-446655440000"
+    let result = Oxpecker.RouteTemplateBuilder.parse 'O' (Some "guid") guidString
+    result |> shouldEqual(box(Guid.Parse guidString))
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with 'O' format without modifier returns string`` () =
+    let result = Oxpecker.RouteTemplateBuilder.parse 'O' None "some-value"
+    result |> shouldEqual "some-value"
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with unknown format returns string`` () =
+    let result = Oxpecker.RouteTemplateBuilder.parse 'x' None "test"
+    result |> shouldEqual "test"
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with invalid int throws RouteParseException`` () =
+    let action =
+        fun () -> Oxpecker.RouteTemplateBuilder.parse 'i' None "not-a-number" |> ignore
+    Assert.Throws<RouteParseException>(action) |> ignore
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with invalid bool throws RouteParseException`` () =
+    let action =
+        fun () -> Oxpecker.RouteTemplateBuilder.parse 'b' None "not-a-bool" |> ignore
+    Assert.Throws<RouteParseException>(action) |> ignore
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with invalid GUID throws RouteParseException`` () =
+    let action =
+        fun () -> Oxpecker.RouteTemplateBuilder.parse 'O' (Some "guid") "not-a-guid" |> ignore
+    Assert.Throws<RouteParseException>(action) |> ignore
+
+[<Fact>]
+let ``RouteTemplateBuilder.parse with invalid float throws RouteParseException`` () =
+    let action =
+        fun () -> Oxpecker.RouteTemplateBuilder.parse 'f' None "not-a-float" |> ignore
+    Assert.Throws<RouteParseException>(action) |> ignore
+
+// ---------------------------------
+// routef Additional Format Specifier Tests
+// ---------------------------------
+
+[<Fact>]
+let ``routef: GET with valid boolean parameter works`` () =
+    task {
+        let endpoints = [ GET [ routef "/flag/{%b}" (fun (flag: bool) -> text $"Flag: {flag}") ] ]
+        let server = WebApp.webApp endpoints
+        let client = server.CreateClient()
+
+        let! response = client.GetAsync("/flag/true")
+        let! content = response.Content.ReadAsStringAsync()
+
+        response.StatusCode |> shouldEqual HttpStatusCode.OK
+        content |> shouldEqual "Flag: True"
+    }
+
+[<Fact>]
+let ``routef: GET with char parameter works`` () =
+    task {
+        let endpoints = [ GET [ routef "/char/{%c}" (fun (c: char) -> text $"Char: {c}") ] ]
+        let server = WebApp.webApp endpoints
+        let client = server.CreateClient()
+
+        let! response = client.GetAsync("/char/x")
+        let! content = response.Content.ReadAsStringAsync()
+
+        response.StatusCode |> shouldEqual HttpStatusCode.OK
+        content |> shouldEqual "Char: x"
+    }
+
+[<Fact>]
+let ``routef: GET with int64 parameter works`` () =
+    task {
+        let endpoints = [ GET [ routef "/bignum/{%d}" (fun (num: int64) -> text $"BigNum: {num}") ] ]
+        let server = WebApp.webApp endpoints
+        let client = server.CreateClient()
+
+        let! response = client.GetAsync("/bignum/9223372036854775807")
+        let! content = response.Content.ReadAsStringAsync()
+
+        response.StatusCode |> shouldEqual HttpStatusCode.OK
+        content |> shouldEqual "BigNum: 9223372036854775807"
+    }
+
+[<Fact>]
+let ``routef: GET with float parameter works`` () =
+    task {
+        let endpoints = [ GET [ routef "/decimal/{%f}" (fun (num: float) -> text $"Decimal: {num}") ] ]
+        let server = WebApp.webApp endpoints
+        let client = server.CreateClient()
+
+        let! response = client.GetAsync("/decimal/3.14159")
+        let! content = response.Content.ReadAsStringAsync()
+
+        response.StatusCode |> shouldEqual HttpStatusCode.OK
+        content |> shouldEqual "Decimal: 3.14159"
+    }
