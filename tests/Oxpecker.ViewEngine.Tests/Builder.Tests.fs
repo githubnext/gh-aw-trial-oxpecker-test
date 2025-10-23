@@ -360,3 +360,190 @@ let ``Attribute value HTML-escaping with quotes`` () =
     node.Render(sb)
     sb.ToString()
     |> shouldEqual """<div title="He said &quot;Hello&quot; "></div>"""
+
+// Integration tests using actual HTML element builder API
+
+open Oxpecker.ViewEngine
+
+[<Fact>]
+let ``Builder computation expression with nested elements`` () =
+    let result =
+        div() {
+            h1() { "Title" }
+            p() { "Paragraph" }
+        }
+    result
+    |> Render.toString
+    |> shouldEqual "<div><h1>Title</h1><p>Paragraph</p></div>"
+
+[<Fact>]
+let ``Builder computation expression with for loop`` () =
+    let items = [ "Apple"; "Banana"; "Cherry" ]
+    let result =
+        ul() {
+            for item in items do
+                li() { item }
+        }
+    result
+    |> Render.toString
+    |> shouldEqual "<ul><li>Apple</li><li>Banana</li><li>Cherry</li></ul>"
+
+[<Fact>]
+let ``Builder computation expression with empty for loop`` () =
+    let items: string list = []
+    let result =
+        ul() {
+            for item in items do
+                li() { item }
+        }
+    result |> Render.toString |> shouldEqual "<ul></ul>"
+
+[<Fact>]
+let ``Builder computation expression with YieldFrom sequence`` () =
+    let paragraphs = [
+        p() { "First paragraph" }
+        p() { "Second paragraph" }
+        p() { "Third paragraph" }
+    ]
+    let result = div() { yield! paragraphs }
+    result
+    |> Render.toString
+    |> shouldEqual "<div><p>First paragraph</p><p>Second paragraph</p><p>Third paragraph</p></div>"
+
+[<Fact>]
+let ``Builder computation expression with raw text`` () =
+    let result = div() { Builder.raw "<strong>Bold HTML</strong>" }
+    result |> Render.toString |> shouldEqual "<div><strong>Bold HTML</strong></div>"
+
+[<Fact>]
+let ``Builder computation expression with mixed content`` () =
+    let result =
+        div() {
+            "Plain text "
+            strong() { "bold" }
+            " and more text"
+        }
+    result
+    |> Render.toString
+    |> shouldEqual "<div>Plain text <strong>bold</strong> and more text</div>"
+
+[<Fact>]
+let ``Builder computation expression with null text`` () =
+    let result =
+        div() {
+            null
+            "content"
+        }
+    result |> Render.toString |> shouldEqual "<div>content</div>"
+
+[<Fact>]
+let ``Builder computation expression with nested loops`` () =
+    let rows = [ 1..3 ]
+    let cols = [ 1..2 ]
+    let result =
+        table() {
+            for row in rows do
+                tr() {
+                    for col in cols do
+                        td() { $"R{row}C{col}" }
+                }
+        }
+    result
+    |> Render.toString
+    |> shouldEqual
+        "<table><tr><td>R1C1</td><td>R1C2</td></tr><tr><td>R2C1</td><td>R2C2</td></tr><tr><td>R3C1</td><td>R3C2</td></tr></table>"
+
+[<Fact>]
+let ``Builder computation expression with multiple yields`` () =
+    let result =
+        div() {
+            span() { "First" }
+            span() { "Second" }
+            span() { "Third" }
+        }
+    result
+    |> Render.toString
+    |> shouldEqual "<div><span>First</span><span>Second</span><span>Third</span></div>"
+
+[<Fact>]
+let ``Builder computation expression with conditional content using if-then`` () =
+    let showTitle = true
+    let result =
+        div() {
+            if showTitle then
+                h1() { "Title" }
+            p() { "Content" }
+        }
+    result
+    |> Render.toString
+    |> shouldEqual "<div><h1>Title</h1><p>Content</p></div>"
+
+[<Fact>]
+let ``Builder computation expression with false conditional`` () =
+    let showTitle = false
+    let result =
+        div() {
+            if showTitle then
+                h1() { "Title" }
+            p() { "Content" }
+        }
+    result |> Render.toString |> shouldEqual "<div><p>Content</p></div>"
+
+[<Fact>]
+let ``Builder computation expression combining all features`` () =
+    let items = [ "A"; "B" ]
+    let showHeader = true
+    let result =
+        div(class' = "container") {
+            if showHeader then
+                h1() { "List" }
+            ul() {
+                for item in items do
+                    li() {
+                        "Item: "
+                        strong() { item }
+                    }
+            }
+            Builder.raw "<!-- comment -->"
+        }
+    result
+    |> Render.toString
+    |> shouldEqual
+        """<div class="container"><h1>List</h1><ul><li>Item: <strong>A</strong></li><li>Item: <strong>B</strong></li></ul><!-- comment --></div>"""
+
+[<Fact>]
+let ``Builder FragmentNode with computation expression`` () =
+    let fragment = Builder.FragmentNode()
+    let result =
+        Builder.HtmlContainerExtensions.Run(
+            fragment,
+            fun c ->
+                c.AddChild(Builder.RegularTextNode("Fragment"))
+                c.AddChild(Builder.RegularTextNode(" content"))
+        )
+    let sb = StringBuilder()
+    result.Render(sb)
+    sb.ToString() |> shouldEqual "Fragment content"
+
+[<Fact>]
+let ``Builder with deeply nested structure`` () =
+    let result =
+        html() {
+            head() { title() { "Test Page" } }
+            body() {
+                div(class' = "wrapper") {
+                    header() { h1() { "Header" } }
+                    main() {
+                        article() {
+                            h2() { "Article" }
+                            p() { "Content" }
+                        }
+                    }
+                    footer() { "Footer" }
+                }
+            }
+        }
+    result
+    |> Render.toString
+    |> shouldEqual
+        """<html><head><title>Test Page</title></head><body><div class="wrapper"><header><h1>Header</h1></header><main><article><h2>Article</h2><p>Content</p></article></main><footer>Footer</footer></div></body></html>"""
