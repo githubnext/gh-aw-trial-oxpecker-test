@@ -845,3 +845,184 @@ let ``span element test`` () =
     }
     |> Render.toString
     |> shouldEqual """<p>Text with <span class="highlight">highlighted</span> word</p>"""
+
+// Additional tests for input element attributes
+[<Fact>]
+let ``input with list attribute test`` () =
+    input(type' = "text", list = "suggestions")
+    |> Render.toString
+    |> shouldEqual """<input type="text" list="suggestions">"""
+
+[<Fact>]
+let ``input with minlength attribute test`` () =
+    input(type' = "text", minlength = 5)
+    |> Render.toString
+    |> shouldEqual """<input type="text" minlength="5">"""
+
+[<Fact>]
+let ``input with dirname attribute test`` () =
+    input(type' = "text", name = "comment", dirname = "comment.dir")
+    |> Render.toString
+    |> shouldEqual """<input type="text" name="comment" dirname="comment.dir">"""
+
+[<Fact>]
+let ``input with form attribute test`` () =
+    input(type' = "submit", form = "myform")
+    |> Render.toString
+    |> shouldEqual """<input type="submit" form="myform">"""
+
+[<Fact>]
+let ``input with formaction attribute test`` () =
+    input(type' = "submit", formaction = "/custom-submit")
+    |> Render.toString
+    |> shouldEqual """<input type="submit" formaction="/custom-submit">"""
+
+[<Fact>]
+let ``input with formenctype attribute test`` () =
+    input(type' = "submit", formenctype = "multipart/form-data")
+    |> Render.toString
+    |> shouldEqual """<input type="submit" formenctype="multipart/form-data">"""
+
+[<Fact>]
+let ``input with formmethod attribute test`` () =
+    input(type' = "submit", formmethod = "post")
+    |> Render.toString
+    |> shouldEqual """<input type="submit" formmethod="post">"""
+
+[<Fact>]
+let ``input with formnovalidate attribute test`` () =
+    input(type' = "submit", formnovalidate = true)
+    |> Render.toString
+    |> shouldEqual """<input type="submit" formnovalidate>"""
+
+[<Fact>]
+let ``input with formtarget attribute test`` () =
+    input(type' = "submit", formtarget = "_blank")
+    |> Render.toString
+    |> shouldEqual """<input type="submit" formtarget="_blank">"""
+
+[<Fact>]
+let ``input with capture attribute test`` () =
+    input(type' = "file", capture = "user")
+    |> Render.toString
+    |> shouldEqual """<input type="file" capture="user">"""
+
+[<Fact>]
+let ``input with accept attribute test`` () =
+    input(type' = "file", accept = "image/*")
+    |> Render.toString
+    |> shouldEqual """<input type="file" accept="image/*">"""
+
+// Additional tests for img element attributes
+[<Fact>]
+let ``img with usemap attribute test`` () =
+    img(src = "planets.jpg", usemap = "#planetmap")
+    |> Render.toString
+    |> shouldEqual """<img src="planets.jpg" usemap="#planetmap">"""
+
+[<Fact>]
+let ``img with referrerpolicy attribute test`` () =
+    img(src = "image.jpg", referrerpolicy = "no-referrer")
+    |> Render.toString
+    |> shouldEqual """<img src="image.jpg" referrerpolicy="no-referrer">"""
+
+[<Fact>]
+let ``img with elementtiming attribute test`` () =
+    img(src = "hero.jpg", elementtiming = "hero-image")
+    |> Render.toString
+    |> shouldEqual """<img src="hero.jpg" elementtiming="hero-image">"""
+
+// Additional tests for form element attributes
+[<Fact>]
+let ``form with acceptCharset attribute test`` () =
+    form(action = "/submit", acceptCharset = "UTF-8") { input(type' = "text") }
+    |> Render.toString
+    |> shouldEqual """<form action="/submit" accept-charset="UTF-8"><input type="text"></form>"""
+
+[<Fact>]
+let ``form with autocomplete attribute test`` () =
+    form(action = "/submit", autocomplete = "off") { input(type' = "text") }
+    |> Render.toString
+    |> shouldEqual """<form action="/submit" autocomplete="off"><input type="text"></form>"""
+
+[<Fact>]
+let ``form with name attribute test`` () =
+    form(name = "myform", action = "/submit") { input(type' = "text") }
+    |> Render.toString
+    |> shouldEqual """<form name="myform" action="/submit"><input type="text"></form>"""
+
+[<Fact>]
+let ``form with novalidate attribute test`` () =
+    form(action = "/submit", novalidate = true) { input(type' = "email") }
+    |> Render.toString
+    |> shouldEqual """<form action="/submit" novalidate><input type="email"></form>"""
+
+[<Fact>]
+let ``form with rel attribute test`` () =
+    form(action = "/submit", rel = "external") { input(type' = "submit") }
+    |> Render.toString
+    |> shouldEqual """<form action="/submit" rel="external"><input type="submit"></form>"""
+
+[<Fact>]
+let ``form with target attribute test`` () =
+    form(action = "/submit", target = "_blank") { input(type' = "submit") }
+    |> Render.toString
+    |> shouldEqual """<form action="/submit" target="_blank"><input type="submit"></form>"""
+
+// Additional tests for script element attributes
+[<Fact>]
+let ``script with nonce attribute test`` () =
+    script(src = "app.js", nonce = "r4nd0m")
+    |> Render.toString
+    |> shouldEqual """<script src="app.js" nonce="r4nd0m"></script>"""
+
+[<Fact>]
+let ``script with referrerpolicy attribute test`` () =
+    script(src = "app.js", referrerpolicy = "origin")
+    |> Render.toString
+    |> shouldEqual """<script src="app.js" referrerpolicy="origin"></script>"""
+
+// Additional tests for link element attributes
+[<Fact>]
+let ``link with as attribute test`` () =
+    link(rel = "preload", href = "font.woff2", as' = "font")
+    |> Render.toString
+    |> shouldEqual """<link rel="preload" href="font.woff2" as="font">"""
+
+[<Fact>]
+let ``link with referrerpolicy attribute test`` () =
+    link(rel = "stylesheet", href = "style.css", referrerpolicy = "no-referrer")
+    |> Render.toString
+    |> shouldEqual """<link rel="stylesheet" href="style.css" referrerpolicy="no-referrer">"""
+
+[<Fact>]
+let ``link with hreflang attribute test`` () =
+    link(rel = "alternate", href = "/es/page", hreflang = "es")
+    |> Render.toString
+    |> shouldEqual """<link rel="alternate" href="/es/page" hreflang="es">"""
+
+[<Fact>]
+let ``link with imagesizes attribute test`` () =
+    link(rel = "preload", href = "image.jpg", as' = "image", imagesizes = "(max-width: 600px) 200px, 50vw")
+    |> Render.toString
+    |> shouldEqual """<link rel="preload" href="image.jpg" as="image" imagesizes="(max-width: 600px) 200px, 50vw">"""
+
+[<Fact>]
+let ``link with imagesrcset attribute test`` () =
+    link(rel = "preload", href = "img-200.jpg", as' = "image", imagesrcset = "img-200.jpg 200w, img-400.jpg 400w")
+    |> Render.toString
+    |> shouldEqual
+        """<link rel="preload" href="img-200.jpg" as="image" imagesrcset="img-200.jpg 200w, img-400.jpg 400w">"""
+
+// Additional tests for anchor element attributes
+[<Fact>]
+let ``anchor with ping attribute test`` () =
+    a(href = "/page", ping = "/track") { "Link" }
+    |> Render.toString
+    |> shouldEqual """<a href="/page" ping="/track">Link</a>"""
+
+[<Fact>]
+let ``anchor with referrerpolicy attribute test`` () =
+    a(href = "https://example.com", referrerpolicy = "no-referrer") { "External" }
+    |> Render.toString
+    |> shouldEqual """<a href="https://example.com" referrerpolicy="no-referrer">External</a>"""
