@@ -693,3 +693,110 @@ let ``routef: GET with float parameter works`` () =
         response.StatusCode |> shouldEqual HttpStatusCode.OK
         content |> shouldEqual "Decimal: 3.14159"
     }
+
+// ---------------------------------
+// applyAfter Tests
+// ---------------------------------
+
+[<Fact>]
+let ``applyAfter: applies handler after SimpleEndpoint`` () =
+    task {
+        // Use a handler that doesn't complete the response, so after handler can run
+        let beforeHandler = setStatusCode 201 >=> setHttpHeader "X-Before" "true"
+        let afterHandler = setHttpHeader "X-After" "true"
+        let endpoint = route "/" (beforeHandler >=> text "Hello") |> applyAfter afterHandler
+        let server = WebApp.webAppOneRoute (GET [ endpoint ])
+        let client = server.CreateClient()
+
+        let! response = client.GetAsync("/")
+        let! content = response.Content.ReadAsStringAsync()
+
+        response.StatusCode |> shouldEqual HttpStatusCode.Created
+        content |> shouldEqual "Hello"
+        response.Headers.Contains("X-Before") |> shouldEqual true
+    }
+
+[<Fact>]
+let ``applyAfter: applies handler after NestedEndpoint`` () =
+    task {
+        let beforeHandler = setHttpHeader "X-Before" "true"
+        let afterHandler = setHttpHeader "X-After" "true"
+        let nestedRoutes = subRoute "/api" [ route "/test" (beforeHandler >=> text "Nested") ]
+        let endpoint = nestedRoutes |> applyAfter afterHandler
+        let server = WebApp.webAppOneRoute (GET [ endpoint ])
+        let client = server.CreateClient()
+
+        let! response = client.GetAsync("/api/test")
+        let! content = response.Content.ReadAsStringAsync()
+
+        response.StatusCode |> shouldEqual HttpStatusCode.OK
+        content |> shouldEqual "Nested"
+        response.Headers.Contains("X-Before") |> shouldEqual true
+    }
+
+[<Fact>]
+let ``applyAfter: applies handler after MultiEndpoint`` () =
+    task {
+        let afterHandler = setHttpHeader "X-After" "applied"
+        let routes = [
+            route "/one" (setStatusCode 201 >=> text "One")
+            route "/two" (setStatusCode 202 >=> text "Two")
+        ]
+        let multiEndpoint = GET routes |> applyAfter afterHandler
+        let server = WebApp.webAppOneRoute multiEndpoint
+        let client = server.CreateClient()
+
+        let! response1 = client.GetAsync("/one")
+        let! content1 = response1.Content.ReadAsStringAsync()
+
+        response1.StatusCode |> shouldEqual HttpStatusCode.Created
+        content1 |> shouldEqual "One"
+
+        let! response2 = client.GetAsync("/two")
+        let! content2 = response2.Content.ReadAsStringAsync()
+
+        response2.StatusCode |> shouldEqual HttpStatusCode.Accepted
+        content2 |> shouldEqual "Two"
+    }
+
+// ---------------------------------
+// MultiEndpoint with HTTP Verb Tests
+// ---------------------------------
+
+[<Fact>]
+let ``applyHttpVerbsToEndpoint: applies verbs to MultiEndpoint`` () =
+    task {
+        let routes = [
+            route "/first" (text "First")
+            route "/second" (text "Second")
+        ]
+        let multiEndpoint = POST routes
+        let server = WebApp.webAppOneRoute multiEndpoint
+        let client = server.CreateClient()
+
+        // Test that GET doesn't work (should be MethodNotAllowed)
+        let! getResponse = client.GetAsync("/first")
+        getResponse.StatusCode |> shouldEqual HttpStatusCode.MethodNotAllowed
+
+        // Test that POST works
+        let! postResponse = client.PostAsync("/first", null)
+        let! postContent = postResponse.Content.ReadAsStringAsync()
+        postResponse.StatusCode |> shouldEqual HttpStatusCode.OK
+        postContent |> shouldEqual "First"
+    }
+
+// ---------------------------------
+// addMetadata Tests
+// ---------------------------------
+
+[<Fact>]
+let ``addMetadata: adds metadata to SimpleEndpoint`` () =
+    task {
+        let metadata = "CustomMetadata"
+        let endpoint = route "/test" (text "Test") |> addMetadata metadata
+        let server = WebApp.webAppOneRoute (GET [ endpoint ])
+        let client = server.CreateClient()
+
+        let! response = client.GetAsync("/test")
+        response.StatusCode |> shouldEqual HttpStatusCode.OK
+    }
