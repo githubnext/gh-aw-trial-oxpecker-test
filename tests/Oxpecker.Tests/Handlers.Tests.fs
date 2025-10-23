@@ -268,7 +268,128 @@ let ``htmlView with nested elements renders correctly`` () =
         result |> shouldContainString "Content"
     }
 
-// Note: htmlViewChunked tested separately in integration tests
+[<Fact>]
+let ``htmlViewChunked writes HTML element with chunked encoding`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Response.Body <- new MemoryStream()
+
+        let view = html() { body() { h1() { "Chunked Content" } } }
+        do! htmlViewChunked view ctx
+
+        ctx.Response.Body.Position <- 0L
+        use reader = new StreamReader(ctx.Response.Body)
+        let! result = reader.ReadToEndAsync()
+
+        result |> shouldContainString "<html>"
+        result |> shouldContainString "<body>"
+        result |> shouldContainString "<h1>"
+        result |> shouldContainString "Chunked Content"
+        ctx.Response.ContentType |> shouldEqual "text/html; charset=utf-8"
+    }
+
+[<Fact>]
+let ``htmlViewChunked with complex nested elements renders correctly`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Response.Body <- new MemoryStream()
+
+        let view =
+            html() {
+                head() { title() { "Test Page" } }
+                body() {
+                    div(class' = "container") {
+                        h1() { "Main Title" }
+                        p() { "Paragraph content" }
+                        ul() {
+                            li() { "Item 1" }
+                            li() { "Item 2" }
+                            li() { "Item 3" }
+                        }
+                    }
+                }
+            }
+        do! htmlViewChunked view ctx
+
+        ctx.Response.Body.Position <- 0L
+        use reader = new StreamReader(ctx.Response.Body)
+        let! result = reader.ReadToEndAsync()
+
+        result |> shouldContainString "<html>"
+        result |> shouldContainString "Test Page"
+        result |> shouldContainString "Main Title"
+        result |> shouldContainString "Paragraph content"
+        result |> shouldContainString "Item 1"
+        result |> shouldContainString "Item 2"
+        result |> shouldContainString "Item 3"
+        ctx.Response.ContentType |> shouldEqual "text/html; charset=utf-8"
+    }
+
+[<Fact>]
+let ``htmlChunked writes async stream of HTML elements with chunked encoding`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Response.Body <- new MemoryStream()
+
+        // Create an async enumerable of HTML elements
+        let htmlStream =
+            { new System.Collections.Generic.IAsyncEnumerable<HtmlElement> with
+                member this.GetAsyncEnumerator(cancellationToken) =
+                    let mutable index = 0
+                    { new System.Collections.Generic.IAsyncEnumerator<HtmlElement> with
+                        member this.Current =
+                            match index with
+                            | 1 -> div() { "Part 1" } :> HtmlElement
+                            | 2 -> div() { "Part 2" } :> HtmlElement
+                            | 3 -> div() { "Part 3" } :> HtmlElement
+                            | _ -> Unchecked.defaultof<HtmlElement>
+                        member this.MoveNextAsync() =
+                            index <- index + 1
+                            System.Threading.Tasks.ValueTask<bool>(index <= 3)
+                        member this.DisposeAsync() = System.Threading.Tasks.ValueTask()
+                    }
+            }
+
+        do! htmlChunked htmlStream ctx
+
+        ctx.Response.Body.Position <- 0L
+        use reader = new StreamReader(ctx.Response.Body)
+        let! result = reader.ReadToEndAsync()
+
+        result |> shouldContainString "<div>"
+        result |> shouldContainString "Part 1"
+        result |> shouldContainString "Part 2"
+        result |> shouldContainString "Part 3"
+        ctx.Response.ContentType |> shouldEqual "text/html; charset=utf-8"
+    }
+
+[<Fact>]
+let ``htmlChunked with empty stream writes empty response`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Response.Body <- new MemoryStream()
+
+        // Create an empty async enumerable
+        let htmlStream =
+            { new System.Collections.Generic.IAsyncEnumerable<HtmlElement> with
+                member this.GetAsyncEnumerator(cancellationToken) =
+                    { new System.Collections.Generic.IAsyncEnumerator<HtmlElement> with
+                        member this.Current = Unchecked.defaultof<HtmlElement>
+                        member this.MoveNextAsync() =
+                            System.Threading.Tasks.ValueTask<bool>(false)
+                        member this.DisposeAsync() = System.Threading.Tasks.ValueTask()
+                    }
+            }
+
+        do! htmlChunked htmlStream ctx
+
+        ctx.Response.Body.Position <- 0L
+        use reader = new StreamReader(ctx.Response.Body)
+        let! result = reader.ReadToEndAsync()
+
+        result.Length |> shouldEqual 0
+        ctx.Response.ContentType |> shouldEqual "text/html; charset=utf-8"
+    }
 
 [<Fact>]
 let ``clearResponse clears the response`` () =
