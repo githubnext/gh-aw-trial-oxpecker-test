@@ -454,3 +454,102 @@ let ``BindQuery parses query string into object`` () =
 
     result.Name |> shouldEqual "Bob"
     result.Age |> shouldEqual 35
+
+[<Fact>]
+let ``TryGetCookieValue returns Some when cookie exists`` () =
+    let ctx = DefaultHttpContext()
+    let cookieDict = Dictionary<string, string>()
+    cookieDict.Add("session", "abc123")
+    ctx.Request.Cookies <-
+        { new IRequestCookieCollection with
+            member _.Count = cookieDict.Count
+            member _.Keys = cookieDict.Keys :> ICollection<string>
+            member _.Item
+                with get (key: string) = cookieDict.[key]
+            member _.TryGetValue(key: string, value: byref<string>) = cookieDict.TryGetValue(key, &value)
+            member _.ContainsKey(key) = cookieDict.ContainsKey(key)
+            member _.GetEnumerator() =
+                (cookieDict :> IEnumerable<KeyValuePair<string, string>>).GetEnumerator()
+            member _.GetEnumerator() : Collections.IEnumerator =
+                (cookieDict :> Collections.IEnumerable).GetEnumerator()
+        }
+
+    let result = ctx.TryGetCookieValue("session")
+
+    result |> shouldEqual(Some "abc123")
+
+[<Fact>]
+let ``TryGetCookieValue returns None when cookie does not exist`` () =
+    let ctx = DefaultHttpContext()
+    let cookieDict = Dictionary<string, string>()
+    ctx.Request.Cookies <-
+        { new IRequestCookieCollection with
+            member _.Count = cookieDict.Count
+            member _.Keys = cookieDict.Keys :> ICollection<string>
+            member _.Item
+                with get (key: string) = null
+            member _.TryGetValue(key: string, value: byref<string>) = cookieDict.TryGetValue(key, &value)
+            member _.ContainsKey(key) = cookieDict.ContainsKey(key)
+            member _.GetEnumerator() =
+                (cookieDict :> IEnumerable<KeyValuePair<string, string>>).GetEnumerator()
+            member _.GetEnumerator() : Collections.IEnumerator =
+                (cookieDict :> Collections.IEnumerable).GetEnumerator()
+        }
+
+    let result = ctx.TryGetCookieValue("session")
+
+    result |> shouldEqual None
+
+[<Fact>]
+let ``GetLogger generic retrieves ILogger of T from container`` () =
+    let ctx = DefaultHttpContext()
+    let services = ServiceCollection()
+    services.AddLogging() |> ignore
+    ctx.RequestServices <- DefaultServiceProviderFactory().CreateServiceProvider(services)
+
+    let logger = ctx.GetLogger<HttpContextExtensions>()
+
+    isNull(box logger) |> shouldEqual false
+
+[<Fact>]
+let ``GetLogger non-generic retrieves ILogger from container`` () =
+    let ctx = DefaultHttpContext()
+    let services = ServiceCollection()
+    services.AddLogging() |> ignore
+    services.AddSingleton<Microsoft.Extensions.Logging.ILogger>(fun sp ->
+        let factory = sp.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>()
+        factory.CreateLogger("TestLogger"))
+    |> ignore
+    ctx.RequestServices <- DefaultServiceProviderFactory().CreateServiceProvider(services)
+
+    let logger = ctx.GetLogger()
+
+    isNull(box logger) |> shouldEqual false
+
+[<Fact>]
+let ``GetLogger with categoryName retrieves ILogger with specified category`` () =
+    let ctx = DefaultHttpContext()
+    let services = ServiceCollection()
+    services.AddLogging() |> ignore
+    ctx.RequestServices <- DefaultServiceProviderFactory().CreateServiceProvider(services)
+
+    let logger = ctx.GetLogger("MyCustomCategory")
+
+    isNull(box logger) |> shouldEqual false
+
+[<Fact>]
+let ``BindQuery throws ModelBindException when binding fails`` () =
+    let ctx = DefaultHttpContext()
+    let services = ServiceCollection()
+    services.AddSingleton<IModelBinder>(fun sp -> ModelBinder() :> IModelBinder)
+    |> ignore
+    ctx.RequestServices <- DefaultServiceProviderFactory().CreateServiceProvider(services)
+    // Invalid query - Age should be int but we provide string that can't be parsed
+    let queryStr = "?Name=Bob&Age=NotANumber"
+    let query = QueryHelpers.ParseQuery queryStr
+    ctx.Request.Query <- QueryCollection(query)
+
+    let action =
+        Action(fun () -> ctx.BindQuery<{| Name: string; Age: int |}>() |> ignore)
+
+    Assert.Throws<ModelBindException>(action) |> ignore
