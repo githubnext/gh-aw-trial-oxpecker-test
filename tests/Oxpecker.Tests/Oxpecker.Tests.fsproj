@@ -25,6 +25,7 @@
         <Compile Include="Preconditional.Tests.fs" />
         <Compile Include="Serializers.Tests.fs" />
         <Compile Include="Streaming.Tests.fs" />
+        <Compile Include="RouteTemplateBuilder.Tests.fs" />
         <Compile Include="Routing.Tests.fs" />
         <Compile Include="ModelValidation.Tests.fs" />
     </ItemGroup>
