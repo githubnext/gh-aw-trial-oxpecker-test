@@ -44,3 +44,75 @@ let ``Test is4xxStatusCode`` () =
 let ``Test is5xxStatusCode`` () =
     100 |> is5xxStatusCode |> shouldEqual false
     500 |> is5xxStatusCode |> shouldEqual true
+
+// Edge case tests for status code boundaries
+[<Fact>]
+let ``Test is1xxStatusCode boundaries`` () =
+    99 |> is1xxStatusCode |> shouldEqual false
+    100 |> is1xxStatusCode |> shouldEqual true
+    150 |> is1xxStatusCode |> shouldEqual true
+    199 |> is1xxStatusCode |> shouldEqual true
+    200 |> is1xxStatusCode |> shouldEqual false
+
+[<Fact>]
+let ``Test is2xxStatusCode boundaries`` () =
+    199 |> is2xxStatusCode |> shouldEqual false
+    200 |> is2xxStatusCode |> shouldEqual true
+    250 |> is2xxStatusCode |> shouldEqual true
+    299 |> is2xxStatusCode |> shouldEqual true
+    300 |> is2xxStatusCode |> shouldEqual false
+
+[<Fact>]
+let ``Test is3xxStatusCode boundaries`` () =
+    299 |> is3xxStatusCode |> shouldEqual false
+    300 |> is3xxStatusCode |> shouldEqual true
+    350 |> is3xxStatusCode |> shouldEqual true
+    399 |> is3xxStatusCode |> shouldEqual true
+    400 |> is3xxStatusCode |> shouldEqual false
+
+[<Fact>]
+let ``Test is4xxStatusCode boundaries`` () =
+    399 |> is4xxStatusCode |> shouldEqual false
+    400 |> is4xxStatusCode |> shouldEqual true
+    450 |> is4xxStatusCode |> shouldEqual true
+    499 |> is4xxStatusCode |> shouldEqual true
+    500 |> is4xxStatusCode |> shouldEqual false
+
+[<Fact>]
+let ``Test is5xxStatusCode boundaries`` () =
+    499 |> is5xxStatusCode |> shouldEqual false
+    500 |> is5xxStatusCode |> shouldEqual true
+    550 |> is5xxStatusCode |> shouldEqual true
+    599 |> is5xxStatusCode |> shouldEqual true
+    600 |> is5xxStatusCode |> shouldEqual false
+
+// Tests for boxv function
+[<Fact>]
+let ``Test boxv with integer`` () =
+    let result = boxv 42
+    result |> shouldEqual(box 42)
+    result.GetType() |> shouldEqual typeof<int>
+
+[<Fact>]
+let ``Test boxv with boolean`` () =
+    let result = boxv true
+    result |> shouldEqual(box true)
+    result.GetType() |> shouldEqual typeof<bool>
+
+[<Fact>]
+let ``Test boxv with float`` () =
+    let result = boxv 3.14
+    result |> shouldEqual(box 3.14)
+    result.GetType() |> shouldEqual typeof<float>
+
+[<Fact>]
+let ``Test boxv with struct`` () =
+    let result = boxv System.DateTime.MinValue
+    result |> shouldEqual(box System.DateTime.MinValue)
+    result.GetType() |> shouldEqual typeof<System.DateTime>
+
+// Test for recyclableMemoryStreamManager
+[<Fact>]
+let ``Test recyclableMemoryStreamManager is initialized`` () =
+    let manager = recyclableMemoryStreamManager.Value
+    manager |> shouldNotEqual null
