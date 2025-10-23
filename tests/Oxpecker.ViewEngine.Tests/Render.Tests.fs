@@ -144,3 +144,119 @@ let ``Render to text writer`` () =
         |> Encoding.UTF8.GetString
         |> shouldEqual $"""<!DOCTYPE html>{Environment.NewLine}<html><div id="1"></div></html>"""
     }
+
+[<Fact>]
+let ``Render to HTML doc string with DOCTYPE`` () =
+    let view = html() { div(id = "test") { "Content" } }
+    let result = Render.toHtmlDocString view
+    result
+    |> shouldEqual $"""<!DOCTYPE html>{Environment.NewLine}<html><div id="test">Content</div></html>"""
+
+[<Fact>]
+let ``Render to bytes produces UTF8 encoded bytes`` () =
+    let view = div() { "Hello World" }
+    let bytes = Render.toBytes view
+    let result = Encoding.UTF8.GetString(bytes)
+    result |> shouldEqual """<div>Hello World</div>"""
+
+[<Fact>]
+let ``Render to bytes with special characters`` () =
+    let view = div() { "Hello <>&\" World" }
+    let bytes = Render.toBytes view
+    let result = Encoding.UTF8.GetString(bytes)
+    result |> shouldEqual """<div>Hello &lt;&gt;&amp;&quot; World</div>"""
+
+[<Fact>]
+let ``Render to HTML doc bytes with DOCTYPE`` () =
+    let view = html() { div(id = "test") { "Content" } }
+    let bytes = Render.toHtmlDocBytes view
+    let result = Encoding.UTF8.GetString(bytes)
+    result
+    |> shouldEqual $"""<!DOCTYPE html>{Environment.NewLine}<html><div id="test">Content</div></html>"""
+
+[<Fact>]
+let ``Render to HTML doc bytes with complex structure`` () =
+    let view =
+        html() {
+            head() { title() { "Test Page" } }
+            body() { div(class' = "container") { p() { "Paragraph" } } }
+        }
+    let bytes = Render.toHtmlDocBytes view
+    let result = Encoding.UTF8.GetString(bytes)
+    result
+    |> shouldEqual
+        $"""<!DOCTYPE html>{Environment.NewLine}<html><head><title>Test Page</title></head><body><div class="container"><p>Paragraph</p></div></body></html>"""
+
+[<Fact>]
+let ``Render to HTML doc stream async with DOCTYPE`` () =
+    task {
+        let view = html() { div(id = "test") { "Content" } }
+        use stream = new MemoryStream()
+        do! Render.toHtmlDocStreamAsync stream view
+        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        stream.ToArray()
+        |> Encoding.UTF8.GetString
+        |> shouldEqual $"""<!DOCTYPE html>{Environment.NewLine}<html><div id="test">Content</div></html>"""
+    }
+
+[<Fact>]
+let ``Render to HTML doc stream async with complex structure`` () =
+    task {
+        let view =
+            html() {
+                head() { meta(charset = "utf-8") }
+                body() {
+                    h1() { "Title" }
+                    p() { "Content" }
+                }
+            }
+        use stream = new MemoryStream()
+        do! Render.toHtmlDocStreamAsync stream view
+        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        stream.ToArray()
+        |> Encoding.UTF8.GetString
+        |> shouldEqual
+            $"""<!DOCTYPE html>{Environment.NewLine}<html><head><meta charset="utf-8"></head><body><h1>Title</h1><p>Content</p></body></html>"""
+    }
+
+[<Fact>]
+let ``Render to text writer async`` () =
+    task {
+        let view = div(id = "test") { "Content" }
+        let stream = new MemoryStream()
+        let textWriter = new StreamWriter(stream, leaveOpen = true)
+        do! Render.toTextWriterAsync textWriter view
+        do! textWriter.DisposeAsync()
+        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        stream.ToArray()
+        |> Encoding.UTF8.GetString
+        |> shouldEqual """<div id="test">Content</div>"""
+    }
+
+[<Fact>]
+let ``Render to text writer async with special characters`` () =
+    task {
+        let view = div() { "Test & <script>" }
+        let stream = new MemoryStream()
+        let textWriter = new StreamWriter(stream, leaveOpen = true)
+        do! Render.toTextWriterAsync textWriter view
+        do! textWriter.DisposeAsync()
+        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        stream.ToArray()
+        |> Encoding.UTF8.GetString
+        |> shouldEqual """<div>Test &amp; &lt;script&gt;</div>"""
+    }
+
+[<Fact>]
+let ``Render to HTML doc text writer with DOCTYPE`` () =
+    task {
+        let view = html() { div() { "Test" } }
+        let stream = new MemoryStream()
+        let textWriter = new StreamWriter(stream, leaveOpen = true)
+        do! Render.toHtmlDocTextWriterAsync textWriter view
+        do! textWriter.DisposeAsync()
+        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        stream.ToArray()
+        |> Encoding.UTF8.GetString
+        |> shouldEqual $"""<!DOCTYPE html>{Environment.NewLine}<html><div>Test</div></html>"""
+    }
