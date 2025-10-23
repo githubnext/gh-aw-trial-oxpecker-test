@@ -503,3 +503,39 @@ let ``subRoute: configureEndpoint inside subRoute`` () =
         innerMetadata.Count |> shouldBeGreaterThan getMetadata.Count
         getMetadata.Count |> shouldBeGreaterThan rootMetadata.Count
     }
+
+// ---------------------------------
+// HttpVerb.ToString Tests
+// ---------------------------------
+
+[<Fact>]
+let ``HttpVerb.ToString returns correct string for POST`` () =
+    HttpVerb.POST.ToString() |> shouldEqual "POST"
+
+[<Fact>]
+let ``HttpVerb.ToString returns correct string for PUT`` () =
+    HttpVerb.PUT.ToString() |> shouldEqual "PUT"
+
+[<Fact>]
+let ``HttpVerb.ToString returns correct string for PATCH`` () =
+    HttpVerb.PATCH.ToString() |> shouldEqual "PATCH"
+
+[<Fact>]
+let ``HttpVerb.ToString returns correct string for DELETE`` () =
+    HttpVerb.DELETE.ToString() |> shouldEqual "DELETE"
+
+[<Fact>]
+let ``HttpVerb.ToString returns correct string for HEAD`` () =
+    HttpVerb.HEAD.ToString() |> shouldEqual "HEAD"
+
+[<Fact>]
+let ``HttpVerb.ToString returns correct string for OPTIONS`` () =
+    HttpVerb.OPTIONS.ToString() |> shouldEqual "OPTIONS"
+
+[<Fact>]
+let ``HttpVerb.ToString returns correct string for TRACE`` () =
+    HttpVerb.TRACE.ToString() |> shouldEqual "TRACE"
+
+[<Fact>]
+let ``HttpVerb.ToString returns correct string for CONNECT`` () =
+    HttpVerb.CONNECT.ToString() |> shouldEqual "CONNECT"
