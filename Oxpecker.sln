@@ -44,6 +44,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Client", "examples\MCP\Clie
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Oxpecker.Htmx.Tests", "tests\Oxpecker.Htmx.Tests\Oxpecker.Htmx.Tests.fsproj", "{6754C4D5-2472-4CFB-9F91-92658FDA9435}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Oxpecker.OpenApi.Tests", "tests\Oxpecker.OpenApi.Tests\Oxpecker.OpenApi.Tests.fsproj", "{2BFD41F5-4432-4268-9463-C2D233A53BF4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -258,6 +260,18 @@ Global
 		{6754C4D5-2472-4CFB-9F91-92658FDA9435}.Release|x64.Build.0 = Release|Any CPU
 		{6754C4D5-2472-4CFB-9F91-92658FDA9435}.Release|x86.ActiveCfg = Release|Any CPU
 		{6754C4D5-2472-4CFB-9F91-92658FDA9435}.Release|x86.Build.0 = Release|Any CPU
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4}.Debug|x64.Build.0 = Debug|Any CPU
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4}.Debug|x86.Build.0 = Debug|Any CPU
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4}.Release|x64.ActiveCfg = Release|Any CPU
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4}.Release|x64.Build.0 = Release|Any CPU
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4}.Release|x86.ActiveCfg = Release|Any CPU
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -282,5 +296,6 @@ Global
 		{F5468A1F-293B-42AC-8AEE-5955C7F0B5AF} = {6162AF6E-BB71-4790-8AF1-79AEF13E83C8}
 		{39200FC7-9FD3-49C0-BA9B-D2060ABD2F18} = {6162AF6E-BB71-4790-8AF1-79AEF13E83C8}
 		{6754C4D5-2472-4CFB-9F91-92658FDA9435} = {40C4900E-D46D-450F-9A93-A2CE2E4EF5CA}
+		{2BFD41F5-4432-4268-9463-C2D233A53BF4} = {40C4900E-D46D-450F-9A93-A2CE2E4EF5CA}
 	EndGlobalSection
 EndGlobal
