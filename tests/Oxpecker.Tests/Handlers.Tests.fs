@@ -4,6 +4,8 @@ open System.IO
 open System.Text
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
+open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Logging
 open Oxpecker
 open Oxpecker.ViewEngine
 open Xunit
@@ -17,7 +19,113 @@ let shouldContainString (substring: string) (str: string) =
 // Request Handlers Tests
 // ============================================================================
 
-// Note: bindJson, bindForm, bindQuery require DI setup with model binders and are tested in ModelParser.Tests.fs
+type TestModel = { Name: string; Age: int }
+
+[<Fact>]
+let ``bindJson parses JSON payload and passes model to handler`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        let jsonPayload = """{"Name":"John","Age":30}"""
+        let stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonPayload))
+        ctx.Request.Body <- stream
+        ctx.Request.ContentType <- "application/json"
+        ctx.Response.Body <- new MemoryStream()
+
+        // Setup DI for JSON serializer
+        let services = ServiceCollection()
+        services.AddSingleton<IJsonSerializer>(fun sp -> SystemTextJsonSerializer() :> IJsonSerializer)
+        |> ignore
+        let provider = services.BuildServiceProvider()
+        ctx.RequestServices <- provider
+
+        let mutable capturedModel = None
+        let testHandler (model: TestModel) : EndpointHandler =
+            fun (ctx: HttpContext) ->
+                capturedModel <- Some model
+                ctx.Response.StatusCode <- 200
+                Task.CompletedTask
+
+        let handler = bindJson testHandler
+        do! handler ctx
+
+        match capturedModel with
+        | Some model ->
+            model.Name |> shouldEqual "John"
+            model.Age |> shouldEqual 30
+        | None -> failwith "Model was not captured"
+    }
+
+[<Fact>]
+let ``bindForm parses form payload and passes model to handler`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Request.ContentType <- "application/x-www-form-urlencoded"
+        ctx.Response.Body <- new MemoryStream()
+
+        // Setup form data
+        let formFields =
+            System.Collections.Generic.Dictionary<string, Microsoft.Extensions.Primitives.StringValues>()
+        formFields.Add("Name", Microsoft.Extensions.Primitives.StringValues("Jane"))
+        formFields.Add("Age", Microsoft.Extensions.Primitives.StringValues("25"))
+        let formData = Microsoft.AspNetCore.Http.FormCollection(formFields)
+        ctx.Request.Form <- formData
+
+        // Setup DI for model binder
+        let services = ServiceCollection()
+        services.AddLogging() |> ignore
+        services.AddSingleton<IModelBinder>(fun sp -> ModelBinder(ModelBinderOptions.Default) :> IModelBinder)
+        |> ignore
+        let provider = services.BuildServiceProvider()
+        ctx.RequestServices <- provider
+
+        let mutable capturedModel = None
+        let testHandler (model: TestModel) : EndpointHandler =
+            fun (ctx: HttpContext) ->
+                capturedModel <- Some model
+                ctx.Response.StatusCode <- 200
+                Task.CompletedTask
+
+        let handler = bindForm testHandler
+        do! handler ctx
+
+        match capturedModel with
+        | Some model ->
+            model.Name |> shouldEqual "Jane"
+            model.Age |> shouldEqual 25
+        | None -> failwith "Model was not captured"
+    }
+
+[<Fact>]
+let ``bindQuery parses query string and passes model to handler`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Request.QueryString <- Microsoft.AspNetCore.Http.QueryString("?Name=Bob&Age=35")
+        ctx.Response.Body <- new MemoryStream()
+
+        // Setup DI for model binder
+        let services = ServiceCollection()
+        services.AddLogging() |> ignore
+        services.AddSingleton<IModelBinder>(fun sp -> ModelBinder(ModelBinderOptions.Default) :> IModelBinder)
+        |> ignore
+        let provider = services.BuildServiceProvider()
+        ctx.RequestServices <- provider
+
+        let mutable capturedModel = None
+        let testHandler (model: TestModel) : EndpointHandler =
+            fun (ctx: HttpContext) ->
+                capturedModel <- Some model
+                ctx.Response.StatusCode <- 200
+                Task.CompletedTask
+
+        let handler = bindQuery testHandler
+        do! handler ctx
+
+        match capturedModel with
+        | Some model ->
+            model.Name |> shouldEqual "Bob"
+            model.Age |> shouldEqual 35
+        | None -> failwith "Model was not captured"
+    }
 
 // ============================================================================
 // Response Handlers Tests
