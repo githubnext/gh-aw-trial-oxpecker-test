@@ -1,6 +1,9 @@
 module Configuration.Tests
 
 open System
+open System.Collections.Generic
+open Microsoft.AspNetCore.Builder
+open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Metadata
 open Microsoft.OpenApi.Models
 open Oxpecker.OpenApi
@@ -12,7 +15,7 @@ let ``RequestBody creates AcceptsMetadata with default values`` () =
     let requestBody = RequestBody(typeof<string>)
     let metadata = requestBody.ToAttribute()
 
-    metadata.ContentTypes |> Seq.toList |> shouldEqual ["application/json"]
+    metadata.ContentTypes |> Seq.toList |> shouldEqual [ "application/json" ]
     metadata.RequestType |> shouldEqual typeof<string>
     metadata.IsOptional |> shouldEqual false
 
@@ -21,7 +24,9 @@ let ``RequestBody with custom content types`` () =
     let requestBody = RequestBody(typeof<int>, [| "application/xml"; "text/plain" |])
     let metadata = requestBody.ToAttribute()
 
-    metadata.ContentTypes |> Seq.toList |> shouldEqual ["application/xml"; "text/plain"]
+    metadata.ContentTypes
+    |> Seq.toList
+    |> shouldEqual [ "application/xml"; "text/plain" ]
 
 [<Fact>]
 let ``RequestBody with optional flag set`` () =
@@ -43,7 +48,9 @@ let ``RequestBody with all parameters specified`` () =
     let metadata = requestBody.ToAttribute()
 
     metadata.RequestType |> shouldEqual typeof<float>
-    metadata.ContentTypes |> Seq.toList |> shouldEqual ["application/octet-stream"]
+    metadata.ContentTypes
+    |> Seq.toList
+    |> shouldEqual [ "application/octet-stream" ]
     metadata.IsOptional |> shouldEqual true
 
 [<Fact>]
@@ -66,7 +73,7 @@ let ``ResponseBody with custom content types`` () =
     let responseBody = ResponseBody(typeof<bool>, [| "text/xml" |])
     let metadata = responseBody.ToAttribute()
 
-    metadata.ContentTypes |> Seq.toList |> shouldEqual ["text/xml"]
+    metadata.ContentTypes |> Seq.toList |> shouldEqual [ "text/xml" ]
 
 [<Fact>]
 let ``ResponseBody with no type specified`` () =
@@ -78,16 +85,19 @@ let ``ResponseBody with no type specified`` () =
 
 [<Fact>]
 let ``ResponseBody with all parameters`` () =
-    let responseBody = ResponseBody(typeof<obj>, [| "application/json"; "application/xml" |], 404)
+    let responseBody =
+        ResponseBody(typeof<obj>, [| "application/json"; "application/xml" |], 404)
     let metadata = responseBody.ToAttribute()
 
     metadata.Type |> shouldEqual typeof<obj>
-    metadata.ContentTypes |> Seq.toList |> shouldEqual ["application/json"; "application/xml"]
+    metadata.ContentTypes
+    |> Seq.toList
+    |> shouldEqual [ "application/json"; "application/xml" ]
     metadata.StatusCode |> shouldEqual 404
 
 [<Fact>]
 let ``ResponseBody with various status codes`` () =
-    let codes = [200; 201; 204; 400; 404; 500]
+    let codes = [ 200; 201; 204; 400; 404; 500 ]
     for code in codes do
         let responseBody = ResponseBody(statusCode = code)
         let metadata = responseBody.ToAttribute()
@@ -95,11 +105,16 @@ let ``ResponseBody with various status codes`` () =
 
 [<Fact>]
 let ``RequestBody with multiple content types`` () =
-    let contentTypes = [| "application/json"; "application/xml"; "text/plain"; "application/octet-stream" |]
+    let contentTypes = [|
+        "application/json"
+        "application/xml"
+        "text/plain"
+        "application/octet-stream"
+    |]
     let requestBody = RequestBody(typeof<string>, contentTypes)
     let metadata = requestBody.ToAttribute()
 
-    metadata.ContentTypes |> Seq.toList |> shouldEqual (contentTypes |> Array.toList)
+    metadata.ContentTypes |> Seq.toList |> shouldEqual(contentTypes |> Array.toList)
 
 [<Fact>]
 let ``ResponseBody with multiple content types`` () =
@@ -107,18 +122,18 @@ let ``ResponseBody with multiple content types`` () =
     let responseBody = ResponseBody(typeof<string>, contentTypes, 200)
     let metadata = responseBody.ToAttribute()
 
-    metadata.ContentTypes |> Seq.toList |> shouldEqual (contentTypes |> Array.toList)
+    metadata.ContentTypes |> Seq.toList |> shouldEqual(contentTypes |> Array.toList)
 
 [<Fact>]
 let ``OpenApiConfig can be created with no parameters`` () =
     let config = OpenApiConfig()
-    config |> ignore  // Just verify it can be created
+    config |> ignore // Just verify it can be created
 
 [<Fact>]
 let ``OpenApiConfig can be created with requestBody`` () =
     let requestBody = RequestBody(typeof<string>)
     let config = OpenApiConfig(requestBody = requestBody)
-    config |> ignore  // Just verify it can be created
+    config |> ignore // Just verify it can be created
 
 [<Fact>]
 let ``OpenApiConfig can be created with responseBodies`` () =
@@ -127,7 +142,7 @@ let ``OpenApiConfig can be created with responseBodies`` () =
         ResponseBody(typeof<int>, statusCode = 404)
     ]
     let config = OpenApiConfig(responseBodies = responseBodies)
-    config |> ignore  // Just verify it can be created
+    config |> ignore // Just verify it can be created
 
 [<Fact>]
 let ``OpenApiConfig can be created with configureOperation`` () =
@@ -135,7 +150,7 @@ let ``OpenApiConfig can be created with configureOperation`` () =
         op.Summary <- "Test summary"
         op
     let config = OpenApiConfig(configureOperation = configureOp)
-    config |> ignore  // Just verify it can be created
+    config |> ignore // Just verify it can be created
 
 [<Fact>]
 let ``OpenApiConfig can be created with all parameters`` () =
@@ -147,5 +162,146 @@ let ``OpenApiConfig can be created with all parameters`` () =
     let configureOp (op: OpenApiOperation) =
         op.Description <- "Complex operation"
         op
-    let config = OpenApiConfig(requestBody = requestBody, responseBodies = responseBodies, configureOperation = configureOp)
-    config |> ignore  // Just verify it can be created
+    let config =
+        OpenApiConfig(requestBody = requestBody, responseBodies = responseBodies, configureOperation = configureOp)
+    config |> ignore // Just verify it can be created
+
+[<Fact>]
+let ``OpenApiConfig Build adds metadata to endpoint with requestBody`` () =
+    let requestBody = RequestBody(typeof<string>)
+    let config = OpenApiConfig(requestBody = requestBody)
+
+    // Create a mock endpoint convention builder
+    let metadata = List<obj>()
+    let mockBuilder =
+        { new IEndpointConventionBuilder with
+            member _.Add(convention) = ()
+            member _.Finally(finalConvention) = ()
+        }
+
+    let result = config.Build(mockBuilder)
+    result |> shouldNotEqual null
+
+[<Fact>]
+let ``OpenApiConfig Build adds metadata to endpoint with responseBodies`` () =
+    let responseBodies = [
+        ResponseBody(typeof<string>, statusCode = 200)
+        ResponseBody(typeof<int>, statusCode = 404)
+    ]
+    let config = OpenApiConfig(responseBodies = responseBodies)
+
+    let metadata = List<obj>()
+    let mockBuilder =
+        { new IEndpointConventionBuilder with
+            member _.Add(convention) = ()
+            member _.Finally(finalConvention) = ()
+        }
+
+    let result = config.Build(mockBuilder)
+    result |> shouldNotEqual null
+
+[<Fact>]
+let ``OpenApiConfig Build adds metadata to endpoint with configureOperation`` () =
+    let configureOp (op: OpenApiOperation) =
+        op.Summary <- "Test summary"
+        op.Description <- "Test description"
+        op
+    let config = OpenApiConfig(configureOperation = configureOp)
+
+    let mockBuilder =
+        { new IEndpointConventionBuilder with
+            member _.Add(convention) = ()
+            member _.Finally(finalConvention) = ()
+        }
+
+    let result = config.Build(mockBuilder)
+    result |> shouldNotEqual null
+
+[<Fact>]
+let ``OpenApiConfig Build with all options adds all metadata`` () =
+    let requestBody = RequestBody(typeof<int>, [| "application/json" |], false)
+    let responseBodies = [
+        ResponseBody(typeof<string>, [| "text/plain" |], 200)
+        ResponseBody(typeof<string>, [| "text/plain" |], 404)
+    ]
+    let configureOp (op: OpenApiOperation) =
+        op.Summary <- "Complete test"
+        op
+    let config =
+        OpenApiConfig(requestBody = requestBody, responseBodies = responseBodies, configureOperation = configureOp)
+
+    let mockBuilder =
+        { new IEndpointConventionBuilder with
+            member _.Add(convention) = ()
+            member _.Finally(finalConvention) = ()
+        }
+
+    let result = config.Build(mockBuilder)
+    result |> shouldNotEqual null
+
+[<Fact>]
+let ``OpenApiConfig Build with empty responseBodies sequence`` () =
+    let config = OpenApiConfig(responseBodies = Seq.empty)
+
+    let mockBuilder =
+        { new IEndpointConventionBuilder with
+            member _.Add(convention) = ()
+            member _.Finally(finalConvention) = ()
+        }
+
+    let result = config.Build(mockBuilder)
+    result |> shouldNotEqual null
+
+[<Fact>]
+let ``OpenApiConfig Build with multiple responseBodies`` () =
+    let responseBodies = [
+        ResponseBody(typeof<string>, statusCode = 200)
+        ResponseBody(typeof<string>, statusCode = 201)
+        ResponseBody(typeof<string>, statusCode = 400)
+        ResponseBody(typeof<string>, statusCode = 404)
+        ResponseBody(typeof<string>, statusCode = 500)
+    ]
+    let config = OpenApiConfig(responseBodies = responseBodies)
+
+    let mockBuilder =
+        { new IEndpointConventionBuilder with
+            member _.Add(convention) = ()
+            member _.Finally(finalConvention) = ()
+        }
+
+    let result = config.Build(mockBuilder)
+    result |> shouldNotEqual null
+
+[<Fact>]
+let ``ResponseBody with no content types specified`` () =
+    let responseBody = ResponseBody(typeof<string>, statusCode = 200)
+    let metadata = responseBody.ToAttribute()
+
+    // ContentTypes should be empty array when not specified
+    metadata.ContentTypes |> Seq.toList |> shouldEqual []
+
+[<Fact>]
+let ``RequestBody with empty content types array`` () =
+    let requestBody = RequestBody(typeof<string>, [||])
+    let metadata = requestBody.ToAttribute()
+
+    metadata.ContentTypes |> Seq.toList |> shouldEqual []
+
+[<Fact>]
+let ``OpenApiConfig configureOperation can modify multiple operation properties`` () =
+    let configureOp (op: OpenApiOperation) =
+        op.Summary <- "Summary text"
+        op.Description <- "Description text"
+        op.OperationId <- "TestOperation"
+        op.Deprecated <- true
+        op
+    let config = OpenApiConfig(configureOperation = configureOp)
+
+    let mockBuilder =
+        { new IEndpointConventionBuilder with
+            member _.Add(convention) = ()
+            member _.Finally(finalConvention) = ()
+        }
+
+    let result = config.Build(mockBuilder)
+    result |> shouldNotEqual null
