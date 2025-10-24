@@ -452,3 +452,102 @@ let ``HTTP GET with non-matching If-None-Match ignores not matching If-Modified-
         let! bytes = response.Content.ReadAsByteArrayAsync()
         bytes |> shouldEqual [| 48uy; 49uy; 50uy; 51uy; 52uy; 53uy; 54uy; 55uy; 56uy; 57uy; 97uy; 98uy; 99uy; 100uy; 101uy; 102uy; 103uy; 104uy; 105uy; 106uy; 107uy; 108uy; 109uy; 110uy; 111uy; 112uy; 113uy; 114uy; 115uy; 116uy; 117uy; 118uy; 119uy; 120uy; 121uy; 122uy; 65uy; 66uy; 67uy; 68uy; 69uy; 70uy; 71uy; 72uy; 73uy; 74uy; 75uy; 76uy; 77uy; 78uy; 79uy; 80uy; 81uy; 82uy; 83uy; 84uy; 85uy; 86uy; 87uy; 88uy; 89uy; 90uy |]
     }
+
+// ---------------------------------
+// Unit tests for validatePreconditions middleware
+// ---------------------------------
+
+[<Fact>]
+let ``validatePreconditions middleware returns 412 on ConditionFailed`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Request.Method <- "POST"
+        ctx.Response.Body <- new System.IO.MemoryStream()
+        ctx.Request.Headers.Add("If-Match", "\"test-etag\"")
+
+        let mutable handlerCalled = false
+        let nextHandler: EndpointHandler = fun _ -> task { handlerCalled <- true }
+
+        let middleware = validatePreconditions None None
+        do! middleware nextHandler ctx
+
+        handlerCalled |> shouldEqual false
+        ctx.Response.StatusCode |> shouldEqual StatusCodes.Status412PreconditionFailed
+    }
+
+[<Fact>]
+let ``validatePreconditions middleware returns 304 on ResourceNotModified`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Request.Method <- "GET"
+        ctx.Response.Body <- new System.IO.MemoryStream()
+        let eTag = createETag "test-etag"
+        ctx.Request.Headers.Add("If-None-Match", "\"test-etag\"")
+
+        let mutable handlerCalled = false
+        let nextHandler: EndpointHandler = fun _ -> task { handlerCalled <- true }
+
+        let middleware = validatePreconditions (Some eTag) None
+        do! middleware nextHandler ctx
+
+        handlerCalled |> shouldEqual false
+        ctx.Response.StatusCode |> shouldEqual StatusCodes.Status304NotModified
+    }
+
+[<Fact>]
+let ``validatePreconditions middleware calls next handler when AllConditionsMet`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Request.Method <- "POST"
+        ctx.Response.Body <- new System.IO.MemoryStream()
+        let eTag = createETag "test-etag"
+        ctx.Request.Headers.Add("If-Match", "\"test-etag\"")
+
+        let mutable handlerCalled = false
+        let nextHandler: EndpointHandler = fun _ -> task { handlerCalled <- true }
+
+        let middleware = validatePreconditions (Some eTag) None
+        do! middleware nextHandler ctx
+
+        handlerCalled |> shouldEqual true
+    }
+
+[<Fact>]
+let ``validatePreconditions middleware calls next handler when NoConditionsSpecified`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Request.Method <- "GET"
+        ctx.Response.Body <- new System.IO.MemoryStream()
+
+        let mutable handlerCalled = false
+        let nextHandler: EndpointHandler = fun _ -> task { handlerCalled <- true }
+
+        let middleware = validatePreconditions None None
+        do! middleware nextHandler ctx
+
+        handlerCalled |> shouldEqual true
+    }
+
+[<Fact>]
+let ``createETag creates strong ETag`` () =
+    let eTag = createETag "my-etag-value"
+    eTag.IsWeak |> shouldEqual false
+    eTag.Tag.ToString() |> shouldEqual "\"my-etag-value\""
+
+[<Fact>]
+let ``createWeakETag creates weak ETag`` () =
+    let eTag = createWeakETag "my-weak-etag"
+    eTag.IsWeak |> shouldEqual true
+    eTag.Tag.ToString() |> shouldEqual "\"my-weak-etag\""
+
+[<Fact>]
+let ``NotModifiedResponse sets 304 status code`` () =
+    let ctx = DefaultHttpContext()
+    ctx.NotModifiedResponse()
+    ctx.Response.StatusCode |> shouldEqual StatusCodes.Status304NotModified
+
+[<Fact>]
+let ``PreconditionFailedResponse sets 412 status code`` () =
+    let ctx = DefaultHttpContext()
+    ctx.PreconditionFailedResponse()
+    ctx.Response.StatusCode |> shouldEqual StatusCodes.Status412PreconditionFailed
